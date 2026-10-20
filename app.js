@@ -1,5 +1,5 @@
 /* 一苇 · 古文观止入门 */
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const KEY = 'yw.state.v1';
 const SNAP = 'yw.snaps.v1';
 const INTERVALS = [1, 2, 4, 7, 15, 30]; // 复习间隔（天），第 6 轮后算掌握
@@ -532,7 +532,7 @@ function viewMe() {
     <div class="card about">
       <p>「一苇」取自《诗经·河广》"谁谓河广？一苇杭之"——谁说河太宽，一叶苇舟就能渡过去。也取《前赤壁赋》"纵一苇之所如"。</p>
       <p>原文据开源项目 Ancient-China-Books/guwenguanzhi 所收吴楚材、吴调侯原本校对，篇目标题对照中华书局 2008 年版（葛兆光题解、戴燕注解）；遇课本通行写法不同处在注释中说明。导读、注释和译文为本 App 编写。</p>
-      <p>第一阶段 12 篇已上线，第二、三阶段正在整理。</p>
+      <p>已上线 ${TEXTS.length} 篇${TEXTS.length < CAT.list.length ? `，其余 ${CAT.list.length - TEXTS.length} 篇正在整理` : '，三个阶段全部完成'}。</p>
       <button class="btn" id="upd" style="margin-top:4px">检查更新</button>
     </div>`;
   shell('我的', html, { tab: 'me' });
