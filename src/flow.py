@@ -1,6 +1,6 @@
 # 交互逐个点一遍：读完→复习安排→自测打分→复习页→导出
 from playwright.sync_api import sync_playwright
-B='http://localhost:8765/'; errs=[]
+import sys; B=sys.argv[1] if len(sys.argv)>1 else 'http://localhost:8765/'; errs=[]
 with sync_playwright() as p:
     b=p.chromium.launch(); ctx=b.new_context(viewport={'width':390,'height':844},service_workers='block'); pg=ctx.new_page()
     pg.on('pageerror',lambda e: errs.append(str(e)))
