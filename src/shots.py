@@ -23,7 +23,7 @@ with sync_playwright() as p:
         def quiz():
             pg.click('#qGo'); pg.wait_for_timeout(200); pg.click('#hintB'); pg.click('#showB')
         shot('#/t/shishuo/test', 'test', quiz, full=False)
-        shot('#/zt/mingju', 'zt'); shot('#/zt/duoyi', 'duoyi'); shot('#/zt/tongjia', 'tongjia'); shot('#/t/chushibiao/text', 'text2')
+        shot('#/zt/mingju', 'zt'); shot('#/zt/duoyi', 'duoyi'); shot('#/zt/tongjia', 'tongjia'); shot('#/t/chushibiao/text', 'text2'); shot('#/t/baorenan/text', 'text3'); shot('#/t/tengwanggexu/words', 'words2'); shot('#/zt/chengyu', 'chengyu')
         shot('#/me', 'me')
         ctx.close()
     b.close()

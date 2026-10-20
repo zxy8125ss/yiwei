@@ -1,6 +1,6 @@
 /* 一苇 · 宣纸书卷风：米白纸色、墨色正文、朱砂点缀；细线、无阴影、无纹理 */
-@font-face { font-family: 'YW Serif'; src: url('fonts/serif-400.woff2?v=2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'YW Serif'; src: url('fonts/serif-600.woff2?v=2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'YW Serif'; src: url('fonts/serif-400.woff2?v=3') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'YW Serif'; src: url('fonts/serif-600.woff2?v=3') format('woff2'); font-weight: 600; font-display: swap; }
 
 :root {
   --bg: #F5F0E6;
