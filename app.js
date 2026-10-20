@@ -1,9 +1,8 @@
 /* 一苇 · 古文观止入门 */
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const KEY = 'yw.state.v1';
 const SNAP = 'yw.snaps.v1';
 const INTERVALS = [1, 2, 4, 7, 15, 30]; // 复习间隔（天），第 6 轮后算掌握
-const XUCI = ['之', '其', '而', '以', '于', '乃', '焉', '者', '也', '乎', '为', '则', '夫', '若', '所', '欤', '诸', '尔', '见', '且'];
 const TYPE_ORDER = ['通假', '古今异义', '词类活用', '实词', '虚词', '特殊句式'];
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -24,7 +23,7 @@ let S = load();
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-  return Object.assign({ texts: {}, settings: { py: true, fs: 19 }, last: null, backupAt: null }, s || {});
+  return Object.assign({ texts: {}, settings: { py: true, fs: 19, note: 'foot' }, last: null, backupAt: null }, s || {});
 }
 function save() {
   S.updated = Date.now();
@@ -64,7 +63,8 @@ function render() {
   quiz = null;
   if (p === 't' && BYID[a]) return viewText(BYID[a], b || 'text');
   if (p === 'review') return viewReview();
-  if (p === 'xuci') return viewXuci(a ? decodeURIComponent(a) : null);
+  if (p === 'zt') return viewTopics(a, b ? decodeURIComponent(b) : null);
+  if (p === 'xuci') return viewTopics('duoyi', a ? decodeURIComponent(a) : null);
   if (p === 'me') return viewMe();
   return viewHome();
 }
@@ -90,7 +90,7 @@ function shell(title, body, { tab = null, back = null, act = '' } = {}) {
     <nav class="tabbar">
       <a href="#/" class="${tab === 'home' ? 'on' : ''}">${ICON.road}路线</a>
       <a href="#/review" class="${tab === 'review' ? 'on' : ''}">${ICON.review}复习${due ? `<span class="dot">${due}</span>` : ''}</a>
-      <a href="#/xuci" class="${tab === 'xuci' ? 'on' : ''}">${ICON.xu}虚词</a>
+      <a href="#/zt" class="${tab === 'zt' ? 'on' : ''}">${ICON.xu}专题</a>
       <a href="#/me" class="${tab === 'me' ? 'on' : ''}">${ICON.me}我的</a>
     </nav>`;
   const b = $('[data-back]');
@@ -99,22 +99,23 @@ function shell(title, body, { tab = null, back = null, act = '' } = {}) {
 }
 
 /* ---------- 首页：路线 ---------- */
+let qOffset = 0;
+const famousLines = () => TEXTS.flatMap(t => t.paras.flat().filter(s => s.m).map(s => ({ s, t })));
+function lineOfDay(off) {
+  const all = famousLines(); if (!all.length) return null;
+  const day = daysBetween('2026-01-01', today());
+  return all[((day * 37 + off) % all.length + all.length) % all.length];
+}
 function viewHome() {
   const due = dueList();
-  const readN = TEXTS.filter(t => st(t.id)?.read).length;
-  const last = S.last && BYID[S.last] ? BYID[S.last] : null;
-  const next = TEXTS.find(t => !st(t.id)?.read);
-  const cont = last && !st(last.id)?.read ? last : (next || last);
-  let html = `<div class="today">
-    <a class="card ${due.length ? 'due' : ''}" href="#/review">
-      <span class="k">今天要复习</span>
-      <span class="v">${due.length} <small>篇</small></span>
-    </a>
-    ${cont ? `<a class="card" href="#/t/${cont.id}/${st(cont.id)?.read ? 'text' : 'intro'}">
-      <span class="k">${st(cont.id)?.read ? '再读一遍' : (readN ? '接着读' : '从这篇开始')}</span>
-      <span class="v serif">${esc(cont.title.replace(/（.*）/, ''))}</span>
-    </a>` : ''}
-  </div>`;
+  const q = lineOfDay(qOffset);
+  let html = q ? `<div class="quote">
+      <div class="qk"><span class="seal">句</span>今日名句</div>
+      <a class="qq" href="#/t/${q.t.id}/text">${esc(plainOf(q.s))}</a>
+      <div class="qy">${esc(q.s.y)}</div>
+      <div class="qf"><a href="#/t/${q.t.id}/text">——${esc(q.t.author)}《${esc(q.t.title.replace(/（.*）/, ''))}》</a><button id="qNext">换一句</button></div>
+    </div>` : '';
+  if (due.length) html += `<a class="duebar" href="#/review"><span>今天有 <b>${due.length}</b> 篇到了复习时间</span><span>去复习 ›</span></a>`;
   let no = 0;
   for (const sg of CAT.stages) {
     const items = CAT.list.filter(x => x.stage === sg.n);
@@ -137,6 +138,7 @@ function viewHome() {
     html += '</div>';
   }
   shell('路线', html, { tab: 'home' });
+  const qn = $('#qNext'); if (qn) qn.onclick = () => { qOffset++; viewHome(); };
 }
 
 /* ---------- 篇章页 ---------- */
@@ -145,12 +147,15 @@ function viewText(t, tab) {
   sessionStorage.setItem('yw.inapp', '1');
   const s = statusOf(t.id);
   const tabs = [['intro', '导读'], ['text', '原文'], ['words', '字词'], ['test', '自测']];
+  // 有核实过的朗读页面就直接打开；否则打开 B 站搜索这一篇的朗诵
+  const l = (t.listen || [])[0] || { url: 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(t.title.replace(/（.*）/, '') + ' 朗诵'), who: 'B站搜索' };
   let body = `<div class="hero">
       <div class="vt">${esc(t.title.replace(/（.*）/, ''))}</div>
       <div class="meta">
         <div class="tags"><span class="chip">${esc(t.juan)}</span><span class="chip">${esc(t.genre)}</span><span class="chip">${t.chars} 字</span>${s.k !== 'new' ? `<span class="chip ${s.cls}">${s.label}</span>` : ''}</div>
         <div class="a">${esc(t.dynasty)} · ${esc(t.author)}</div>
         <div class="gist">${esc(t.intro.gist || '')}</div>
+        ${l ? `<a class="listen-btn" href="${esc(l.url)}" target="_blank" rel="noopener">${ICON.play}<span>名家朗读</span><small>${esc(l.who || '')}</small></a>` : ''}
       </div>
     </div>
     <div class="tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('')}</div>
@@ -187,56 +192,94 @@ function paneIntro(t) {
   </div>`;
 }
 
-function sentHTML(s, pi, si) {
-  const inner = s.t.map(p => {
-    if (typeof p === 'string') return esc(p);
-    const cls = p.tj ? ' class="tj"' : '';
-    return p.py ? `<ruby${cls}>${esc(p.c)}<rt>${esc(p.py)}</rt></ruby>` : `<span${cls}>${esc(p.c)}</span>`;
-  }).join('');
-  return `<span class="s${s.m ? ' m' : ''}" data-s="${pi}.${si}">${inner}</span>`;
+const PUNC = /[，。、；：？！“”‘’（）《》—…·]/;
+function unitHTML(p) {
+  if (typeof p === 'string') return esc(p);
+  const cls = p.tj ? ' class="tj"' : '';
+  return p.py ? `<ruby${cls}>${esc(p.c)}<rt>${esc(p.py)}</rt></ruby>` : `<span${cls}>${esc(p.c)}</span>`;
 }
-function noteHTML(s) {
-  const tjs = s.t.filter(p => typeof p !== 'string' && p.tj);
-  return `<div class="note"><div class="y">${esc(s.y)}</div>${s.n.length ? `<dl>${s.n.map(n => `<div class="row"><dt>${esc(n.w)}</dt><dd>：${esc(n.d)}</dd></div>`).join('')}</dl>` : ''}</div>`;
+// 把每条注释挂到它解释的字词后面（教科书式）：页下注用编号，夹注直接插在字后
+function sentHTML(s, pi, si, ctx) {
+  const units = [];
+  for (const p of s.t) {
+    if (typeof p === 'string') for (const ch of p) units.push({ c: ch, h: esc(ch) });
+    else units.push({ c: p.c, h: unitHTML(p) });
+  }
+  const ends = []; let acc = 0;
+  for (const u of units) { acc += u.c.length; ends.push(acc); }
+  const plain = units.map(u => u.c).join('');
+  const marks = units.map(() => []);
+  let from = 0;
+  for (const n of s.n) {
+    const key = n.w.replace(/[（(].*$/, '');
+    let i = plain.indexOf(key, from);
+    if (i < 0) i = plain.indexOf(key);
+    let ui;
+    if (i >= 0) { const e = i + key.length; ui = ends.findIndex(x => x >= e); from = i; }
+    else { ui = units.length - 1; while (ui > 0 && PUNC.test(units[ui].c)) ui--; }
+    marks[ui].push(n);
+  }
+  let html = '';
+  units.forEach((u, k) => {
+    html += u.h;
+    for (const n of marks[k]) {
+      if (ctx.mode === 'foot') { ctx.n++; ctx.foot.push({ k: ctx.n, n }); html += `<sup class="fn">${ctx.n}</sup>`; }
+      else if (ctx.mode === 'inline') html += `<span class="jz">〔${esc(n.d)}〕</span>`;
+    }
+  });
+  return `<span class="s${s.m ? ' m' : ''}" data-s="${pi}.${si}">${html}</span>`;
 }
 
 let showAllY = false;
 function paneText(t, pane) {
   const s = statusOf(t.id);
   const read = st(t.id)?.read;
+  const mode = S.settings.note || 'foot';
   pane.innerHTML = `
     <div class="tools">
-      <button class="tog ${S.settings.py ? 'on' : ''}" id="tPy">注音</button>
-      <button class="tog ${showAllY ? 'on' : ''}" id="tY">全文译文</button>
+      <div class="seg" id="nMode">${[['foot', '页下注'], ['inline', '夹注'], ['off', '不看注']].map(([k, n]) => `<button data-m="${k}" class="${mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
       <span class="sp"></span>
       <button class="tog" id="fsM" aria-label="字号缩小">A−</button>
       <button class="tog" id="fsP" aria-label="字号放大">A＋</button>
     </div>
-    <div class="hint">点任意一句，看注释和译文。朱砂下划线是名句。</div>
-    <div class="wen ${S.settings.py ? '' : 'nopy'}" id="wen" style="--fs:${S.settings.fs}px"></div>
+    <div class="tools" style="margin-top:0">
+      <button class="tog ${S.settings.py ? 'on' : ''}" id="tPy">注音</button>
+      <button class="tog ${showAllY ? 'on' : ''}" id="tY">全文译文</button>
+    </div>
+    <div class="hint">点任意一句看译文。朱砂下划线是名句。</div>
+    <div class="wen ${S.settings.py ? '' : 'nopy'} mode-${mode}" id="wen" style="--fs:${S.settings.fs}px"></div>
     ${read
       ? `<button class="done-btn ghost" disabled>已读 · ${esc(s.label)}</button>`
       : `<button class="done-btn" id="doneBtn">读完了，安排复习</button>`}
-    <div class="hint" style="text-align:center">读完后会在明天提醒你第一次复习，之后间隔逐渐拉长。</div>`;
+    <div class="hint" style="text-align:center">读完后第二天提醒第一次复习，之后间隔逐渐拉长。</div>`;
   const wen = $('#wen');
   const draw = () => {
-    wen.innerHTML = t.paras.map((p, pi) => `<p>${p.map((x, si) => sentHTML(x, pi, si)).join('')}</p>` +
-      (showAllY ? `<div class="para-y">${esc(p.map(x => x.y).join(''))}</div>` : '')).join('');
+    const ctx = { mode: S.settings.note || 'foot', n: 0, foot: [] };
+    wen.className = `wen ${S.settings.py ? '' : 'nopy'} mode-${ctx.mode}`;
+    wen.innerHTML = t.paras.map((p, pi) => {
+      ctx.foot = [];
+      const body = `<p data-p="${pi}">${p.map((x, si) => sentHTML(x, pi, si, ctx)).join('')}</p>`;
+      const y = showAllY ? `<div class="para-y">${esc(p.map(x => x.y).join(''))}</div>` : '';
+      const foot = ctx.foot.length ? `<div class="fnl">${ctx.foot.map(f => `<div class="fni"><span class="fnn">${f.k}</span><b>${esc(f.n.w)}</b>　${esc(f.n.d)}</div>`).join('')}</div>` : '';
+      return body + y + foot;
+    }).join('');
   };
   draw();
   let open = null;
   wen.onclick = e => {
     const el = e.target.closest('.s'); if (!el) return;
-    wen.querySelectorAll('.note').forEach(n => n.remove());
+    wen.querySelectorAll('.yi').forEach(n => n.remove());
     wen.querySelectorAll('.s.on').forEach(n => n.classList.remove('on'));
     if (open === el.dataset.s) { open = null; return; }
     open = el.dataset.s;
     const [pi, si] = open.split('.').map(Number);
     el.classList.add('on');
-    const p = el.closest('p');
-    const after = showAllY ? p.nextElementSibling : p;
-    after.insertAdjacentHTML('afterend', noteHTML(t.paras[pi][si]));
+    el.closest('p').insertAdjacentHTML('afterend', `<div class="yi"><span class="yk">译</span>${esc(t.paras[pi][si].y)}</div>`);
   };
+  $('#nMode').querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+    S.settings.note = b.dataset.m; save(); open = null;
+    $('#nMode').querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x === b)); draw();
+  });
   $('#tPy').onclick = e => { S.settings.py = !S.settings.py; save(); e.target.classList.toggle('on', S.settings.py); wen.classList.toggle('nopy', !S.settings.py); };
   $('#tY').onclick = e => { showAllY = !showAllY; e.target.classList.toggle('on', showAllY); open = null; draw(); };
   const fs = d => { S.settings.fs = Math.max(16, Math.min(25, S.settings.fs + d)); save(); wen.style.setProperty('--fs', S.settings.fs + 'px'); };
@@ -251,15 +294,17 @@ function paneText(t, pane) {
   };
 }
 
+// 字词：按在文中出现的先后编号，一行一条
+function wordsInOrder(t) {
+  const full = t.paras.flat().map(plainOf).join('');
+  return t.words.map((w, i) => ({ w, pos: (p => p < 0 ? 1e6 + i : p)(full.indexOf(w.ex)) })).sort((a, b) => a.pos - b.pos).map(x => x.w);
+}
 function paneWords(t) {
-  const groups = {};
-  for (const w of t.words) (groups[w.t] = groups[w.t] || []).push(w);
-  let html = '';
-  for (const k of TYPE_ORDER) {
-    if (!groups[k]) continue;
-    html += `<div class="wgroup"><h3>${k} · ${groups[k].length}</h3>` +
-      groups[k].map(w => `<div class="wcard"><div class="w">${esc(w.w)}</div><div class="d">${esc(w.d)}<div class="ex">${hl(w.ex, w.w)}</div></div></div>`).join('') + '</div>';
-  }
+  const ws = wordsInOrder(t);
+  let html = `<div class="wl">${ws.map((w, i) => `<div class="wrow"><span class="wn">${i + 1}</span><div class="wb">
+      <div class="wh"><b>${esc(w.w)}</b><span class="tag t-${TYPE_ORDER.indexOf(w.t)}">${esc(w.t)}</span></div>
+      <div class="wd">${esc(w.d)}</div><div class="wex">${hl(w.ex, w.w)}</div></div></div>`).join('')}</div>`;
+  if (t.idioms && t.idioms.length) html += `<div class="sec"><h2>出自本篇的成语</h2></div><div class="wl">${t.idioms.map(x => `<div class="wrow"><div class="wb"><div class="wh"><b>${esc(x.w)}</b></div><div class="wd">${esc(x.d)}</div><div class="wex">原句：${esc(x.ex)}</div></div></div>`).join('')}</div>`;
   return html + `<button class="done-btn ghost" data-go="test" style="margin-top:20px">去自测</button>`;
 }
 function hl(ex, w) {
@@ -400,30 +445,61 @@ function viewReview(auto) {
   }
 }
 
-/* ---------- 虚词手册 ---------- */
-function xuciIndex() {
+/* ---------- 词句专题 ---------- */
+const TOPICS = [['mingju', '名句'], ['chengyu', '成语'], ['tongjia', '通假字'], ['gujin', '古今异义'], ['huoyong', '词类活用'], ['jushi', '特殊句式'], ['duoyi', '一词多义']];
+const TOPIC_TYPE = { tongjia: '通假', gujin: '古今异义', huoyong: '词类活用', jushi: '特殊句式' };
+const TOPIC_DESC = {
+  mingju: '各篇最值得记住的句子，点开回到原文。',
+  chengyu: '出自这些文章的成语和常用语。',
+  tongjia: '古人用读音相同或相近的字代替本字，读时要按本字理解。',
+  gujin: '字面和今天一样，意思却不一样，最容易读错。',
+  huoyong: '名词当动词用、"使……""以……为……"等临时改变用法的词。',
+  jushi: '宾语前置、定语后置、被动、判断等和现代汉语语序不同的句子。',
+  duoyi: '同一个字在不同文章里的不同意思，虚词实词都在内。',
+};
+const shortT = t => t.title.replace(/（.*）/, '');
+function polyIndex() {
   const idx = {};
   for (const t of TEXTS) for (const w of t.words) {
-    if (w.t !== '虚词') continue;
-    const c = w.w;
-    const k = w.d.replace(/，指.*$/, '');
-    ((idx[c] = idx[c] || {})[k] = idx[c][k] || []).push({ ex: w.ex, t });
+    if ([...w.w].length !== 1) continue;
+    const k = w.d.replace(/，指.*$/, '').replace(/（.*?）/g, '');
+    ((idx[w.w] = idx[w.w] || {})[k] = idx[w.w][k] || []).push({ ex: w.ex, t, type: w.t });
   }
+  for (const c of Object.keys(idx)) if (Object.keys(idx[c]).length < 2) delete idx[c];
   return idx;
 }
-function viewXuci(sel) {
-  const idx = xuciIndex();
-  const chars = XUCI.filter(c => idx[c]).concat(Object.keys(idx).filter(c => !XUCI.includes(c)));
-  if (!sel || !idx[sel]) sel = chars[0];
-  const count = c => Object.values(idx[c]).reduce((a, b) => a + b.length, 0);
-  let html = `<p class="muted small" style="margin:0 0 12px">从已收录各篇中汇总常见虚词的用法，点一个字查看。</p>
-    <div class="xgrid">${chars.map(c => `<button data-c="${esc(c)}" class="${c === sel ? 'on' : ''}">${esc(c)}<small>${count(c)}</small></button>`).join('')}</div>
-    <div class="sec"><h2 class="serif">“${esc(sel)}”</h2><span class="num">${Object.keys(idx[sel]).length} 种用法</span></div>`;
-  for (const [d, exs] of Object.entries(idx[sel])) {
-    html += `<div class="card xsense"><h4>${esc(d)}</h4>${exs.map(e => `<div class="ex"><span class="q">${hl(e.ex, sel)}</span><a href="#/t/${e.t.id}/text">${esc(e.t.title.replace(/（.*）/, ''))}</a></div>`).join('')}</div>`;
+function viewTopics(key, sel) {
+  if (!TOPIC_DESC[key]) key = 'mingju';
+  let html = `<div class="chips">${TOPICS.map(([k, n]) => `<a href="#/zt/${k}" class="${k === key ? 'on' : ''}">${n}</a>`).join('')}</div>
+    <p class="muted small" style="margin:10px 0 12px">${TOPIC_DESC[key]}</p>`;
+  if (key === 'mingju') {
+    for (const t of TEXTS) {
+      const ms = t.paras.flat().filter(s => s.m); if (!ms.length) continue;
+      html += `<div class="card topic"><a class="tt" href="#/t/${t.id}/text">《${esc(shortT(t))}》<small>${esc(t.author)}</small></a>${ms.map(s => `<div class="mj"><div class="mq">${esc(plainOf(s))}</div><div class="my">${esc(s.y)}</div></div>`).join('')}</div>`;
+    }
+  } else if (key === 'chengyu') {
+    const all = TEXTS.flatMap(t => (t.idioms || []).map(x => ({ x, t })));
+    html += `<div class="wl">${all.map(({ x, t }) => `<div class="wrow"><div class="wb"><div class="wh"><b>${esc(x.w)}</b><a class="src" href="#/t/${t.id}/text">《${esc(shortT(t))}》</a></div><div class="wd">${esc(x.d)}</div><div class="wex">原句：${esc(x.ex)}</div></div></div>`).join('')}</div>`;
+  } else if (key === 'duoyi') {
+    const idx = polyIndex();
+    const order = ['之', '其', '而', '以', '于', '为', '乃', '焉', '者', '乎', '则', '夫', '若', '所'];
+    const chars = Object.keys(idx).sort((a, b) => ((order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99)) || Object.keys(idx[b]).length - Object.keys(idx[a]).length);
+    if (!sel || !idx[sel]) sel = chars[0];
+    html += `<div class="xgrid">${chars.map(c => `<button data-c="${esc(c)}" class="${c === sel ? 'on' : ''}">${esc(c)}<small>${Object.keys(idx[c]).length}</small></button>`).join('')}</div>
+      <div class="sec"><h2 class="serif">“${esc(sel)}”</h2><span class="num">${Object.keys(idx[sel]).length} 种意思</span></div>`;
+    for (const [d, exs] of Object.entries(idx[sel])) {
+      html += `<div class="card xsense"><h4>${esc(d)}<span class="tag">${esc(exs[0].type)}</span></h4>${exs.map(e => `<div class="ex"><span class="q">${hl(e.ex, sel)}</span><a href="#/t/${e.t.id}/text">${esc(shortT(e.t))}</a></div>`).join('')}</div>`;
+    }
+  } else {
+    const ty = TOPIC_TYPE[key];
+    for (const t of TEXTS) {
+      const ws = wordsInOrder(t).filter(w => w.t === ty); if (!ws.length) continue;
+      html += `<div class="card topic"><a class="tt" href="#/t/${t.id}/text">《${esc(shortT(t))}》<small>${ws.length} 条</small></a>${ws.map(w => `<div class="tw"><b>${esc(w.w)}</b>　${esc(w.d)}<div class="wex">${hl(w.ex, w.w)}</div></div>`).join('')}</div>`;
+    }
   }
-  shell('虚词', html, { tab: 'xuci' });
-  app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => history.replaceState(null, '', '#/xuci/' + encodeURIComponent(b.dataset.c)) || viewXuci(b.dataset.c));
+  shell('词句专题', html, { tab: 'zt' });
+  app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => history.replaceState(null, '', '#/zt/duoyi/' + encodeURIComponent(b.dataset.c)) || viewTopics('duoyi', b.dataset.c));
+  const on = $('.chips .on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
 
 /* ---------- 我的 ---------- */

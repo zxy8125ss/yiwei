@@ -45,6 +45,7 @@ def ruby(s):
 
 def parse(path):
     meta, paras, words, cur, sent = {}, [], [], None, None
+    idioms = []
     allow = []
     for raw in path.read_text('utf8').splitlines():
         line = raw.rstrip()
@@ -53,6 +54,9 @@ def parse(path):
         if line.startswith('@word '):
             w, ex, d, t = [x.strip() for x in line[6:].split('|')]
             words.append({'w': w, 'ex': ex, 'd': d, 't': t})
+        elif line.startswith('@idiom '):
+            w, ex, d = [x.strip() for x in line[7:].split('|')]
+            idioms.append({'w': w, 'ex': ex, 'd': d})
         elif line.startswith('@allow '):  # 允许的异文：底本字=本稿字
             a, b = line[7:].split('=')
             allow.append((a.strip(), b.strip()))
@@ -78,7 +82,7 @@ def parse(path):
             sent['y'] = line[1:].strip()
         else:
             raise SystemExit(f'{path.name}: 看不懂这一行：{line}')
-    return meta, paras, words, allow
+    return meta, paras, words, allow, idioms
 
 def diff(a, b):
     """返回第一处不同的位置附近片段"""
@@ -93,7 +97,7 @@ def diff(a, b):
 def main():
     texts, problems = [], []
     for f in sorted((HERE / 'content').glob('*.txt')):
-        meta, paras, words, allow = parse(f)
+        meta, paras, words, allow, idioms = parse(f)
         body = ''.join(plain(''.join(p if isinstance(p, str) else p['c'] for p in s['t'])) for p in paras for s in p)
         src = norm(SRC[meta['src']]['simp'], allow)
         mine = norm(body, ())
@@ -103,6 +107,9 @@ def main():
                 problems.append(f"{meta['title']}：{op} 底本「{src[max(0,a1-4):a2+4]}」 本稿「{mine[max(0,b1-4):b2+4]}」")
         for s in (s for p in paras for s in p):
             if not s['y']: problems.append(f"{meta['title']}：缺译文 {plain(str(s['t']))[:10]}")
+        for w in idioms:
+            if plain(w['ex']).replace(' ', '') not in body:
+                problems.append(f"{meta['title']}：成语出处句不在原文中：{w['ex']}")
         for w in words:
             if plain(w['ex']).replace(' ', '') not in body:
                 problems.append(f"{meta['title']}：字词卡例句不在原文中：{w['ex']}")
@@ -116,7 +123,7 @@ def main():
         texts.append({
             'id': meta['id'], 'title': meta['title'], 'author': meta['author'], 'dynasty': meta['dynasty'],
             'stage': int(meta['stage']), 'juan': meta['juan'], 'genre': meta.get('genre', ''),
-            'chars': len(body), 'intro': intro, 'paras': paras, 'words': words, 'listen': listen,
+            'chars': len(body), 'intro': intro, 'paras': paras, 'words': words, 'idioms': idioms, 'listen': listen,
         })
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / 'texts.json').write_text(json.dumps(texts, ensure_ascii=False, separators=(',', ':')), 'utf8')

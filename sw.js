@@ -1,7 +1,7 @@
 // 网络优先：在线时总取最新版本，离线时用缓存
-const CACHE = 'yiwei-1.0.0';
-const ASSETS = ['./', 'index.html', 'style.css?v=1.0.0', 'app.js?v=1.0.0', 'manifest.json?v=1', 'version.json',
-  'data/texts.json', 'data/catalog.json', 'fonts/serif-400.woff2?v=1', 'fonts/serif-600.woff2?v=1', 'icons/yiwei-192.png?v=1'];
+const CACHE = 'yiwei-1.1.0';
+const ASSETS = ['./', 'index.html', 'style.css?v=1.1.0', 'app.js?v=1.1.0', 'manifest.json?v=2', 'version.json',
+  'data/texts.json', 'data/catalog.json', 'fonts/serif-400.woff2?v=1', 'fonts/serif-600.woff2?v=1', 'icons/seal-192.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})); });
 self.addEventListener('activate', e => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);

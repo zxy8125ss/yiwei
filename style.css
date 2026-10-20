@@ -236,3 +236,68 @@ rt { font-family: var(--sans); font-size: 10.5px; color: var(--zhu); letter-spac
 .toast.show { opacity: 1; }
 .empty { text-align: center; padding: 40px 16px; color: var(--ink3); }
 .empty .big { font-family: var(--serif); font-size: 20px; color: var(--ink); margin-bottom: 6px; }
+
+/* ===== 1.1：今日名句 ===== */
+.quote { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 12px; position: relative; overflow: hidden; }
+.quote::before { content: '“'; position: absolute; right: 10px; top: -18px; font-family: var(--serif); font-size: 120px; color: var(--zhu); opacity: .08; line-height: 1; pointer-events: none; }
+.qk { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink3); margin-bottom: 10px; }
+.qk .seal { width: 20px; height: 20px; font-size: 11px; }
+.qq { display: block; font-family: var(--serif); font-size: 21px; font-weight: 600; line-height: 1.6; color: var(--ink); }
+.qy { font-size: 14px; color: var(--ink2); margin-top: 8px; line-height: 1.7; }
+.qf { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.qf a { flex: 1; min-width: 0; font-family: var(--serif); font-size: 14px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qf button { flex: none; font-size: 13px; color: var(--zhu); padding: 4px 2px; }
+.duebar { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; padding: 11px 14px; border-radius: 12px; background: var(--zhu-soft); color: var(--zhu); font-size: 14px; white-space: nowrap; }
+.duebar span:first-child { overflow: hidden; text-overflow: ellipsis; }
+
+/* 朗读按钮 */
+.listen-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 7px 14px 7px 10px; border-radius: 999px; background: var(--zhu); color: #fff; font-size: 14px; font-weight: 600; max-width: 100%; }
+.listen-btn svg { flex: none; }
+.listen-btn small { font-weight: 400; opacity: .85; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 教科书式注释 */
+.seg { flex: none; }
+sup.fn { font-family: var(--sans); font-size: 10px; color: var(--zhu); vertical-align: super; line-height: 0; margin: 0 1px 0 0; font-weight: 600; }
+.mode-off sup.fn, .mode-off .jz { display: none; }
+.jz { font-family: var(--sans); font-size: .62em; color: var(--qing); letter-spacing: 0; line-height: 1.5; margin: 0 2px; }
+.fnl { margin: 4px 0 18px; padding: 10px 12px; border-top: 1px solid var(--line); font-family: var(--sans); font-size: 13.5px; line-height: 1.7; color: var(--ink2); text-indent: 0; text-align: left; letter-spacing: 0; }
+.fni { padding: 2px 0 2px 26px; position: relative; }
+.fnn { position: absolute; left: 0; top: 4px; min-width: 20px; height: 18px; border-radius: 9px; background: var(--zhu-soft); color: var(--zhu); font-size: 11px; text-align: center; line-height: 18px; padding: 0 4px; }
+.fni b { color: var(--ink); font-weight: 600; }
+.yi { margin: 2px 0 14px; padding: 10px 12px; border-radius: 10px; background: var(--amber-soft); font-family: var(--serif); font-size: 16px; line-height: 1.75; text-indent: 0; text-align: left; letter-spacing: 0; color: var(--ink); }
+.yk { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; background: var(--zhu); color: #fff; font-size: 11px; margin-right: 6px; vertical-align: 2px; font-family: var(--sans); }
+
+/* 字词：按出现顺序一行一条 */
+.wl { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 14px; }
+.wrow { display: flex; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--line2); }
+.wrow:first-child { border-top: 0; }
+.wn { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); color: var(--ink3); font-size: 11px; display: grid; place-items: center; margin-top: 3px; }
+.wb { flex: 1; min-width: 0; }
+.wh { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wh b { font-family: var(--serif); font-size: 18px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wh .src { margin-left: auto; flex: none; font-size: 12px; color: var(--ink3); }
+.tag { flex: none; font-size: 11px; padding: 1px 7px; border-radius: 6px; background: var(--line2); color: var(--ink2); white-space: nowrap; font-weight: 400; font-family: var(--sans); }
+.tag.t-0 { background: var(--zhu-soft); color: var(--zhu); }
+.tag.t-1 { background: var(--amber-soft); color: var(--amber); }
+.tag.t-2 { background: var(--qing-soft); color: var(--qing); }
+.wd { font-size: 14.5px; color: var(--ink); line-height: 1.6; margin-top: 2px; }
+.wex { font-family: var(--serif); font-size: 13.5px; color: var(--ink3); margin-top: 2px; }
+.wex b { color: var(--zhu); font-weight: 600; }
+
+/* 词句专题 */
+.chips { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips a { flex: none; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; color: var(--ink2); white-space: nowrap; }
+.chips a.on { background: var(--zhu); border-color: var(--zhu); color: #fff; }
+.topic { padding: 14px; }
+.topic .tt { display: flex; align-items: baseline; gap: 8px; font-family: var(--serif); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.topic .tt small { font-family: var(--sans); font-size: 12px; font-weight: 400; color: var(--ink3); }
+.mj { padding: 9px 0; border-top: 1px dashed var(--line); }
+.mj:first-of-type { border-top: 0; }
+.mq { font-family: var(--serif); font-size: 17px; line-height: 1.7; }
+.my { font-size: 13.5px; color: var(--ink3); line-height: 1.6; margin-top: 2px; }
+.tw { padding: 8px 0; border-top: 1px dashed var(--line); font-size: 14.5px; line-height: 1.6; }
+.tw:first-of-type { border-top: 0; }
+.tw > b { font-family: var(--serif); font-size: 17px; color: var(--zhu); }
+.xsense h4 { display: flex; align-items: center; gap: 8px; }
+.xsense h4 .tag { margin-left: auto; }

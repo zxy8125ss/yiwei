@@ -7,8 +7,8 @@ with sync_playwright() as p:
     pg.goto(B+'#/t/loushiming/intro'); pg.wait_for_timeout(500)
     pg.click('[data-go="text"]'); pg.wait_for_timeout(200)
     assert pg.is_visible('#wen'), '导读→原文失败'
-    pg.click('[data-s="0.2"]'); assert pg.is_visible('.note'), '点句子没出注释'
-    pg.click('[data-s="0.2"]'); assert not pg.is_visible('.note'), '再点没收起'
+    pg.click('[data-s="0.2"]'); assert pg.is_visible('.yi'), '点句子没出译文'
+    pg.click('[data-s="0.2"]'); assert not pg.is_visible('.yi'), '再点没收起'
     pg.click('#tPy'); assert 'nopy' in pg.get_attribute('#wen','class'), '注音开关无效'
     pg.click('#tY'); assert pg.is_visible('.para-y'), '全文译文无效'
     pg.click('#fsP'); 
@@ -31,6 +31,10 @@ with sync_playwright() as p:
     pg.goto(B+'#/me'); pg.wait_for_timeout(300)
     with pg.expect_download() as d: pg.click('#exp')
     print('导出文件', d.value.suggested_filename)
-    pg.goto(B+'#/xuci/%E8%80%8C'); pg.wait_for_timeout(300); assert pg.is_visible('.xsense')
+    pg.goto(B+'#/zt/duoyi'); pg.wait_for_timeout(300); assert pg.is_visible('.xsense'); pg.click('[data-c]:nth-child(2)'); assert pg.is_visible('.xsense')
+    pg.goto(B+'#/t/shishuo/text'); pg.wait_for_timeout(300)
+    for m in ('inline','off','foot'): pg.click(f'[data-m={m}]'); pg.wait_for_timeout(100)
+    assert pg.locator('sup.fn').count()>20, 'footnotes missing'
+    pg.click('[data-s="0.1"]'); assert pg.is_visible('.yi'), '点句不出译文'
     b.close()
 print('\n'.join(errs) or '交互全部通过')
