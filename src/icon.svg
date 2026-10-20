@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#F3EDE1"/>
+  <!-- 朱砂日 -->
+  <circle cx="742" cy="286" r="72" fill="#B0352B"/>
+  <!-- 一苇：一叶细长的苇舟 -->
+  <path transform="rotate(-9 520 640)" d="M168 612 C 330 650, 560 662, 868 556 C 820 604, 700 676, 520 690 C 380 700, 250 668, 168 612 Z" fill="#1F1B16"/>
+  <!-- 水纹 -->
+  <path d="M236 760 C 380 742, 520 772, 660 752 S 830 744, 880 760" stroke="#1F1B16" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
+  <path d="M330 826 C 450 812, 560 836, 700 820" stroke="#1F1B16" stroke-width="6" fill="none" stroke-linecap="round" opacity=".35"/>
+</svg>
