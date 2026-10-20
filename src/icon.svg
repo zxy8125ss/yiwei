@@ -1,10 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="#F3EDE1"/>
-  <!-- 朱砂日 -->
-  <circle cx="742" cy="286" r="72" fill="#B0352B"/>
-  <!-- 一苇：一叶细长的苇舟 -->
-  <path transform="rotate(-9 520 640)" d="M168 612 C 330 650, 560 662, 868 556 C 820 604, 700 676, 520 690 C 380 700, 250 668, 168 612 Z" fill="#1F1B16"/>
-  <!-- 水纹 -->
-  <path d="M236 760 C 380 742, 520 772, 660 752 S 830 744, 880 760" stroke="#1F1B16" stroke-width="7" fill="none" stroke-linecap="round" opacity=".55"/>
-  <path d="M330 826 C 450 812, 560 836, 700 820" stroke="#1F1B16" stroke-width="6" fill="none" stroke-linecap="round" opacity=".35"/>
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3ECDF"/><stop offset="1" stop-color="#E9DFCD"/></linearGradient></defs>
+<rect width="1024" height="1024" fill="url(#g)"/>
+<circle cx="700" cy="330" r="96" fill="#C2573F" opacity=".9"/>
+<path d="M210 600 C 360 640, 600 640, 820 560 C 770 620, 640 680, 500 684 C 380 688, 280 660, 210 600 Z" fill="#2E2A25"/>
+<path d="M560 640 L 592 360" stroke="#2E2A25" stroke-width="10" stroke-linecap="round"/>
+<path d="M250 760 C 380 742, 520 772, 660 752 S 820 744, 860 758" stroke="#2E2A25" stroke-width="8" fill="none" stroke-linecap="round" opacity=".35"/>
+<path d="M350 826 C 460 812, 560 836, 690 820" stroke="#2E2A25" stroke-width="7" fill="none" stroke-linecap="round" opacity=".2"/>
 </svg>

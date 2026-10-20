@@ -1,5 +1,5 @@
 /* 一苇 · 古文观止入门 */
-const VERSION = '1.3.0';
+const VERSION = '1.3.1';
 const KEY = 'yw.state.v1';
 const SNAP = 'yw.snaps.v1';
 const INTERVALS = [1, 2, 4, 7, 15, 30]; // 复习间隔（天），第 6 轮后算掌握
