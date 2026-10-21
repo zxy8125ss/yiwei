@@ -1,5 +1,5 @@
 /* 一苇 · 古文观止入门 */
-const VERSION = '1.3.1';
+const VERSION = '1.4.0';
 const KEY = 'yw.state.v1';
 const SNAP = 'yw.snaps.v1';
 const INTERVALS = [1, 2, 4, 7, 15, 30]; // 复习间隔（天），第 6 轮后算掌握
@@ -29,6 +29,7 @@ function save() {
   S.updated = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
   snapshot();
+  Cloud.schedule();
 }
 // 每天留一份本机快照（保留 7 份），误操作时可从「我的」恢复
 function snapshot() {
@@ -115,6 +116,8 @@ function viewHome() {
       <div class="qy">${esc(q.s.y)}</div>
       <div class="qf"><a href="#/t/${q.t.id}/text">——${esc(q.t.author)}《${esc(q.t.title.replace(/（.*）/, ''))}》</a><button id="qNext">换一句</button></div>
     </div>` : '';
+  if (!Cloud.on() && Object.keys(S.texts).length) html += `<a class="duebar warn" href="#/me"><span>记录只在这台手机里，开启自动备份</span><span>去开启 ›</span></a>`;
+  else if (Cloud.on() && Cloud.c.err) html += `<a class="duebar warn" href="#/me"><span>自动备份没传上去</span><span>去看看 ›</span></a>`;
   if (due.length) html += `<a class="duebar" href="#/review"><span>今天有 <b>${due.length}</b> 篇到了复习时间</span><span>去复习 ›</span></a>`;
   let no = 0;
   for (const sg of CAT.stages) {
@@ -521,7 +524,17 @@ function viewMe() {
       <div class="row2"><div class="l">原文字号</div><div class="r"><div class="seg">${[17, 19, 22].map(n => `<button data-fs="${n}" class="${S.settings.fs === n ? 'on' : ''}">${n === 17 ? '小' : n === 19 ? '中' : '大'}</button>`).join('')}</div></div></div>
       <div class="row2"><div class="l">外观</div><div class="r"><div class="seg">${[['auto', '跟随系统'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<button data-th="${k}" class="${theme === k ? 'on' : ''}">${n}</button>`).join('')}</div></div></div>
     </div>
-    <div class="sec"><h2>备份</h2><span class="num">上次：${bk}</span></div>
+    <div class="sec"><h2>自动备份</h2>${Cloud.on() ? `<span class="num">${Cloud.statusText()}</span>` : ''}</div>
+    ${Cloud.on() ? `<div class="list">
+      <div class="row2"><div class="l">已开启 · 存在你的 GitHub（${esc(Cloud.c.login)}）<div class="s2">${Cloud.c.err ? `<span style="color:var(--zhu)">上次没传上去：${esc(Cloud.c.err)}</span>` : '记录一有变化就自动上传；换手机、重新添加图标后，再开一次就能找回'}</div></div><div class="r"><button class="btn" id="cNow">立即备份</button></div></div>
+      <div class="row2"><div class="l">关闭自动备份<div class="s2">只是停止上传，GitHub 上的备份不删除</div></div><div class="r"><button class="btn" id="cOff">关闭</button></div></div>
+    </div>` : `<div class="card cloud">
+      <p><b>现在记录只存在这台手机里。</b>开启后会自动备份到你自己的 GitHub（私密，不公开），删掉图标、换手机都能找回。</p>
+      <p class="muted small">只需要一次：点下面的按钮，在打开的 GitHub 页面拉到最底，点绿色的 <b>Generate token</b>，复制生成的那串字符，回到这里粘贴。之前给别的 App 开过的，也可以直接粘贴那串。</p>
+      <a class="btn zhu" id="cTok" href="${Cloud.TOKEN_URL}" target="_blank" rel="noopener">去 GitHub 生成</a>
+      <div class="cloud-in"><input id="cKey" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="粘贴以 ghp_ 开头的那串字符"><button class="btn zhu" id="cGo">开启</button></div>
+    </div>`}
+    <div class="sec"><h2>手动备份</h2><span class="num">上次导出：${bk}</span></div>
     <div class="list">
       <div class="row2"><div class="l">导出备份<div class="s2">阅读进度和复习安排存成一个文件，可存到「文件」或发到微信</div></div><div class="r"><button class="btn zhu" id="exp">导出</button></div></div>
       <div class="row2"><div class="l">导入备份<div class="s2">换手机或误删后，用备份文件恢复</div></div><div class="r"><button class="btn" id="imp">导入</button></div></div>
@@ -544,6 +557,16 @@ function viewMe() {
   $('#file').onchange = importBackup;
   $('#snap').onclick = showSnaps;
   $('#upd').onclick = () => checkUpdate(true);
+  const go = $('#cGo');
+  if (go) go.onclick = async () => {
+    const k = $('#cKey').value.trim();
+    if (!k) return toast('先粘贴那串字符');
+    go.disabled = true; go.textContent = '连接中…';
+    try { const n = await Cloud.connect(k); toast(n ? `已开启，找回了 ${n} 篇的记录` : '已开启自动备份'); render(); }
+    catch (e) { toast(e.message || '没连上，检查一下那串字符'); go.disabled = false; go.textContent = '开启'; }
+  };
+  const now = $('#cNow'); if (now) now.onclick = async () => { now.disabled = true; await Cloud.push(); toast(Cloud.c.err ? '没传上去：' + Cloud.c.err : '已备份'); viewMe(); };
+  const off = $('#cOff'); if (off) off.onclick = () => { if (confirm('关闭自动备份？GitHub 上已有的备份会保留。')) { Cloud.off(); viewMe(); } };
 }
 
 async function exportBackup() {
@@ -584,6 +607,82 @@ function showSnaps() {
   S = Object.assign(load(), JSON.parse(x.s)); save(); toast(`已恢复到 ${mdCN(x.d)}`); viewMe();
 }
 
+
+/* ---------- 自动备份：用户自己 GitHub 上的私密 Gist ---------- */
+// 一篇的记录哪个更"进一步"：复习次数多 > 最后复习日期新 > 读过的时间新
+const rank = x => !x ? [-1] : [(x.hist || []).length, x.last || '', x.read || 0];
+const newer = (a, b) => { const ra = rank(a), rb = rank(b); for (let i = 0; i < 3; i++) { if (ra[i] > rb[i]) return true; if (ra[i] < rb[i]) return false; } return false; };
+function mergeState(remote) {
+  let n = 0;
+  for (const [id, r] of Object.entries(remote.texts || {})) {
+    if (newer(r, S.texts[id])) { S.texts[id] = r; n++; }
+  }
+  if (!S.last && remote.last) S.last = remote.last;
+  return n;
+}
+const Cloud = {
+  API: 'https://api.github.com', DESC: '一苇 自动备份（请勿删除）', FILE: 'yiwei-backup.json',
+  TOKEN_URL: 'https://github.com/settings/tokens/new?scopes=gist&description=' + encodeURIComponent('一苇 自动备份'),
+  c: (() => { try { return JSON.parse(localStorage.getItem('yw.cloud')) || null; } catch (e) { return null; } })(),
+  on() { return !!(this.c && this.c.token && this.c.gist); },
+  keep() { try { this.c ? localStorage.setItem('yw.cloud', JSON.stringify(this.c)) : localStorage.removeItem('yw.cloud'); } catch (e) {} },
+  async gh(token, path, init = {}) {
+    const r = await fetch(this.API + path, { ...init, headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' } });
+    if (r.status === 401) throw new Error('这串字符无效或已过期');
+    if (!r.ok) throw new Error('GitHub 返回 ' + r.status);
+    return r.status === 204 ? null : r.json();
+  },
+  body() { return JSON.stringify({ app: 'yiwei', version: VERSION, at: new Date().toISOString(), state: { ...S, backupAt: S.backupAt } }, null, 1); },
+  async read(token, id) {
+    const g = await this.gh(token, '/gists/' + id);
+    const f = g.files[this.FILE]; if (!f) return null;
+    const text = f.truncated ? await (await fetch(f.raw_url)).text() : f.content;
+    try { const d = JSON.parse(text); return d && d.app === 'yiwei' ? d.state : null; } catch (e) { return null; }
+  },
+  async connect(token) {
+    const user = await this.gh(token, '/user');
+    let gist = null, n = 0;
+    for (let p = 1; p <= 10 && !gist; p++) {
+      const list = await this.gh(token, `/gists?per_page=100&page=${p}`);
+      const hit = list.find(g => g.description === this.DESC && g.files[this.FILE]);
+      if (hit) gist = hit.id;
+      if (list.length < 100) break;
+    }
+    if (gist) { const st = await this.read(token, gist); if (st) n = mergeState(st); }
+    else gist = (await this.gh(token, '/gists', { method: 'POST', body: JSON.stringify({ description: this.DESC, public: false, files: { [this.FILE]: { content: this.body() } } }) })).id;
+    this.c = { token, gist, login: user.login }; this.keep();
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+    await this.push();
+    return n;
+  },
+  off() { this.c = null; this.keep(); },
+  timer: null,
+  schedule() { if (!this.on()) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 3000); },
+  busy: null,
+  push() {
+    if (!this.on()) return Promise.resolve();
+    if (this.busy) return this.busy;
+    clearTimeout(this.timer);
+    this.busy = this.gh(this.c.token, '/gists/' + this.c.gist, { method: 'PATCH', body: JSON.stringify({ files: { [this.FILE]: { content: this.body() } } }) })
+      .then(() => { this.c.at = Date.now(); delete this.c.err; })
+      .catch(e => { this.c.err = e.message; })
+      .finally(() => { this.keep(); this.busy = null; });
+    return this.busy;
+  },
+  async pull() {
+    if (!this.on()) return 0;
+    try { const st = await this.read(this.c.token, this.c.gist); if (!st) return 0; const n = mergeState(st); if (n) { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} } return n; }
+    catch (e) { return 0; }
+  },
+  statusText() {
+    if (this.c.err) return '上次没传上去';
+    if (!this.c.at) return '还没上传';
+    const m = Math.round((Date.now() - this.c.at) / 60000);
+    return m < 1 ? '刚刚已备份' : m < 60 ? `${m} 分钟前已备份` : m < 1440 ? `${Math.round(m / 60)} 小时前已备份` : `${mdCN(ymd(new Date(this.c.at)))}已备份`;
+  },
+};
+document.addEventListener('visibilitychange', () => { if (document.hidden && Cloud.on() && Cloud.timer) Cloud.push(); });
+
 /* ---------- 杂项 ---------- */
 let tt;
 function toast(m) {
@@ -623,6 +722,7 @@ async function boot() {
   CAT = cat;
   TEXTS.forEach(t => BYID[t.id] = t);
   render();
+  Cloud.pull().then(n => { if (n) { toast(`已从云端同步 ${n} 篇的记录`); render(); } });
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }

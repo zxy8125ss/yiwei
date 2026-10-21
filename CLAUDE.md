@@ -32,5 +32,6 @@
 ## 技术要点
 - 纯静态：`index.html` + `style.css` + `app.js` + `sw.js`，数据在 `data/`。
 - 版本号三处一起改：`app.js` 的 `VERSION`、`version.json`、`sw.js` 的 `CACHE`（以及 index.html / sw.js 里的 `?v=`）。打开或切回 App 时检查 version.json，有新版直接刷新；自测进行中则等做完再刷新。
-- 记录存 localStorage（`yw.state.v1`），每天自动留本机快照 7 份（`yw.snaps.v1`）；「我的」页可导出/导入备份文件。**永远不让用户删主屏幕图标**（会丢记录）。
+- 记录存 localStorage（`yw.state.v1`），每天自动留本机快照 7 份（`yw.snaps.v1`）；「我的」页可导出/导入备份文件。
+- 自动备份（1.4 起）：用户贴一次 GitHub gist 权限的 token（存 `yw.cloud`，不进备份），存到私密 Gist「一苇 自动备份（请勿删除）」/`yiwei-backup.json`；记录变化 3 秒后上传，切后台立即上传，打开时拉云端合并（每篇取复习次数多/日期新的一份）。没开时首页常驻提醒。`python3 src/cloudtest.py` 用模拟接口测「开启→上传→新手机→找回」。**永远不让用户删主屏幕图标**（会丢记录）。
 - 交付前：`python3 src/shots.py`（390px 截图、深浅色、横向溢出检查）、`python3 src/flow.py`（交互逐个点一遍），都要先 `python3 -m http.server 8765` 起本地服务。

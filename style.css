@@ -301,3 +301,11 @@ sup.fn { font-family: var(--sans); font-size: 10px; color: var(--zhu); vertical-
 .tw > b { font-family: var(--serif); font-size: 17px; color: var(--zhu); }
 .xsense h4 { display: flex; align-items: center; gap: 8px; }
 .xsense h4 .tag { margin-left: auto; }
+
+/* 自动备份 */
+.cloud p { margin: 0 0 10px; font-size: 14.5px; line-height: 1.7; }
+.cloud .btn { display: inline-block; }
+.cloud-in { display: flex; gap: 8px; margin-top: 12px; }
+.cloud-in input { flex: 1; min-width: 0; font-size: 16px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-family: ui-monospace, Menlo, monospace; }
+.duebar.warn { background: var(--amber-soft); color: var(--amber); }
+.stats .card + .card, .today .card + .card { margin-top: 0; }

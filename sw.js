@@ -1,6 +1,6 @@
 // 网络优先：在线时总取最新版本，离线时用缓存
-const CACHE = 'yiwei-1.3.1';
-const ASSETS = ['./', 'index.html', 'style.css?v=1.3.1', 'app.js?v=1.3.1', 'manifest.json?v=3', 'version.json',
+const CACHE = 'yiwei-1.4.0';
+const ASSETS = ['./', 'index.html', 'style.css?v=1.4.0', 'app.js?v=1.4.0', 'manifest.json?v=3', 'version.json',
   'data/texts.json', 'data/catalog.json', 'fonts/serif-400.woff2?v=3', 'fonts/serif-600.woff2?v=3', 'icons/boat-192.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})); });
 self.addEventListener('activate', e => e.waitUntil((async () => {
